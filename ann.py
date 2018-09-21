@@ -1,4 +1,4 @@
-# Data Preprocessing
+# 1 - Data Preprocessing
 
 # import libraries
 import numpy as np
@@ -30,7 +30,7 @@ sc = StandardScaler()
 X_train = sc.fit_transform(X_train)
 X_test = sc.transform(X_test)
 
-# Fitting classifier to the training set
+# 2 - Implementing NN
 
 # actual NN code
 import keras
@@ -44,17 +44,20 @@ classifier = Sequential()
 # adds first hidden layer with input layer, uniformly distributed random weights and 
 # rectified linear activation function
 # hidden layer 1
-classifier.add(Dense(input_dim = 11, output_dim = 6, init = 'uniform', activation = 'relu'))
+classifier.add(Dense(input_dim = 11, units = 6, kernel_initializer = 'uniform', activation = 'relu'))
 # hidden layer 2
-classifier.add(Dense(output_dim = 6, init = 'uniform', activation = 'relu'))
+classifier.add(Dense(units = 6, kernel_initializer = 'uniform', activation = 'relu'))
 # output layer
-classifier.add(Dense(output_dim = 1, init = 'uniform', activation = 'sigmoid'))
+classifier.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
 
 # compiling the nn
 classifier.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
 
 # fitting the nn to training set
-classifier.fit(X_train, y_train, batch_size = 10, nb_epoch = 100)
+#classifier.fit(X_train, y_train, batch_size = 10, nb_epoch = 100)
+
+
+# 3 - Making Predictions and basic evaluation
 
 # Predicting the test set results
 y_pred = classifier.predict(X_test)
@@ -68,3 +71,49 @@ print ("False Negatives: ", cm[1, 0])
 print ("True Positives: ", cm[1, 1])
 print ("False Positives: ", cm[0, 1])
 print ("Test set accuracy: ", (cm[1, 1] + cm[0, 0]) / len(y_test) )
+
+
+# 4 - Evaluating, improving an tuning the model
+
+# Evaluating the NN
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.model_selection import cross_val_score
+
+def build_classifier():
+    # build only the nn architecture
+    classifier = Sequential()
+    classifier.add(Dense(input_dim = 11, units = 6, kernel_initializer = 'uniform', activation = 'relu'))
+    classifier.add(Dense(units = 6, kernel_initializer = 'uniform', activation = 'relu'))
+    classifier.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
+    classifier.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
+    return classifier
+
+# k-fold cross validation classifier to check real relevant accuracies, where we are in the
+# bias-variance trade off
+classifier = KerasClassifier(build_fn = build_classifier, batch_size = 10, epochs = 100)
+
+# Fix for keras multiprocessing on windows issue
+# ImportError: [joblib] Attempting to do parallel computing without protecting your import on a system that does not support forking. To use parallel-
+# computing in a script, you must protect your main loop using "if __name__ == '__main__'". Please see the joblib documentation on Parallel for more information
+# I think windows doesn't have os.fork() so child processes don't have parent's context to spawn properly
+
+# for mac and linux, just uncomment this:
+# accuracies = cross_val_score(estimator = classifier, X = X_train, y = y_train, cv = 10, n_jobs = -1)
+
+# for windows
+class CrossValScore(object):
+    def __init__(self):
+        accuracies = cross_val_score(estimator = classifier, X = X_train, y = y_train, cv = 10, n_jobs = -1)
+        mean = accuracies.mean()
+        variance = accuracies.std()
+        print("Mean: ", mean)
+        print("Variance: ", variance)
+
+if __name__ == "__main__":
+    CrossValScore()
+
+
+
+# Improving the NN
+
+# Tuning the NN
