@@ -93,7 +93,7 @@ def build_classifier():
 
 # k-fold cross validation classifier to check real relevant accuracies, where we are in the
 # bias-variance trade off
-classifier = KerasClassifier(build_fn = build_classifier, batch_size = 10, epochs = 100)
+classifier = KerasClassifier(build_fn = build_classifier, batch_size = 10, epochs = 1)
 
 # Fix for keras multiprocessing on windows issue
 # ImportError: [joblib] Attempting to do parallel computing without protecting your import on a system that does not support forking. To use parallel-
@@ -114,9 +114,33 @@ class CrossValScore(object):
 
 if __name__ == "__main__":
     CrossValScore()
-
-
+    
 
 # Improving the NN
+# added dropout above
 
 # Tuning the NN
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.model_selection import GridSearchCV
+
+def build_classifier(optimizer):
+    # build only the nn architecture
+    classifier = Sequential()
+    classifier.add(Dense(input_dim = 11, units = 6, kernel_initializer = 'uniform', activation = 'relu'))
+    classifier.add(Dense(units = 6, kernel_initializer = 'uniform', activation = 'relu'))
+    classifier.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
+    classifier.compile(optimizer = optimizer, loss = 'binary_crossentropy', metrics = ['accuracy'])
+    return classifier
+
+# GridSeachCV classifier for parameters tuning
+classifier = KerasClassifier(build_fn = build_classifier)
+
+# create a dict for hyperparameters that I want to tune
+parameters = {'batch_size': [25, 32], 'epochs': [50, 200, 500], 'optimizer': ['adam', 'rmsprop']}
+# create the grid search object
+grid_search = GridSearchCV(estimator = classifier, param_grid = parameters, scoring = 'accuracy', cv = 10)
+# fit grid search object to the training set
+grid_search = grid_search.fit(X_train, y_train)
+
+best_parameters = grid_search.best_params_
+best_accuracy = grid_search.best_score_
