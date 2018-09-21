@@ -36,6 +36,7 @@ X_test = sc.transform(X_test)
 import keras
 from keras.models import Sequential     # sequential module initializes the nn
 from keras.layers import Dense          # dense module creates the layers
+from keras.layers import Dropout        # to prevent overfitting
 
 # initialize the nn
 classifier = Sequential()
@@ -45,6 +46,8 @@ classifier = Sequential()
 # rectified linear activation function
 # hidden layer 1
 classifier.add(Dense(input_dim = 11, units = 6, kernel_initializer = 'uniform', activation = 'relu'))
+# hidden layer 1 dropout -> p = 0 overfitting, p = 1 underfitting
+classifier.add(Dropout(p = 0.1))
 # hidden layer 2
 classifier.add(Dense(units = 6, kernel_initializer = 'uniform', activation = 'relu'))
 # output layer
